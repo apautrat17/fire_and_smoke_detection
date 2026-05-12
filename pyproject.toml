@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "fire_and_smoke_detection"
+version = "0.0.1"
+description = "Fire and Smoke detection - ComputerVision Project"
+authors = ["Anthony Pautrat <anthony.ptrt@gmail.com>"]
+dynamic = ["dependencies", "optional-dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
