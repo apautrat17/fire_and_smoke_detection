@@ -1,0 +1,18 @@
+# Data processing
+raw_test_images_path: "data/testing/raw/images" # "data/dataset/raw/images"
+raw_test_labels_path: "data/testing/raw/labels" # "data/dataset/raw/labels"
+raw_train_images_path: "data/dataset/raw/images"
+raw_train_labels_path: "data/dataset/raw/labels"
+processed_test_images_path: "data/testing/processed/images" # "data/dataset/processed/images"
+processed_test_labels_path: "data/testing/processed/labels" # "data/dataset/processed/labels"
+processed_train_images_path: "data/dataset/processed/images"
+processed_train_labels_path: "data/dataset/processed/labels"
+resize: True
+resize_size: 640
+
+# Main pipeline
+process_data: True
+
+# Logger
+log_folder_path: "src/logs"
+log_level: "INFO"

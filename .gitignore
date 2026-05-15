@@ -220,3 +220,6 @@ __marimo__/
 # Other
 notes.txt
 todo.txt
+data/dataset/
+/data/
+src/logs/
