@@ -1,10 +1,10 @@
 import os
+import yaml
 import logging
 import argparse
-# from tqdm import tqdm
+from tqdm import tqdm
 from pathlib import Path
 from src.config.config_parser import Config
-from src.utils.helpers import load_config, str2bool
 
 
 def parse_args():
@@ -20,6 +20,26 @@ def parse_args():
 
     return parser.parse_args()
 
+def load_config(config_path: str) -> Config:
+    """
+    Load configuration parameters from a YAML file.
+
+    Args:
+        config_path (str): Path to the YAML configuration file.
+
+    Returns:
+        Config: An instance of the Config class initialized with the loaded parameters.
+    """
+    with open(config_path, "r") as f:
+        configuration = yaml.safe_load(f)
+
+    return Config(**configuration)
+
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    return v.lower() in ("true", "1", "yes")
 
 def override_config(config_dict: dict, args) -> dict:
     for key, value in vars(args).items():
@@ -66,13 +86,13 @@ class Logger:
 
             return super().format(record)
 
-    # class TqdmLoggingHandler(logging.Handler):
-    #     def emit(self, record):
-    #         try:
-    #             msg = self.format(record)
-    #             tqdm.write(msg)
-    #         except Exception:
-    #             self.handleError(record)
+    class TqdmLoggingHandler(logging.Handler):
+        def emit(self, record):
+            try:
+                msg = self.format(record)
+                tqdm.write(msg)
+            except Exception:
+                self.handleError(record)
 
     def __init__(self, level="INFO", name="Logger", log_file=None):
         """
@@ -98,11 +118,11 @@ class Logger:
             )
 
             # Console handler
-            # sh = (
-            #     self.TqdmLoggingHandler()
-            # )  # Safe if tqdm pbar is used, otherwise it behaves like a normal StreamHandler
-            # sh.setFormatter(console_formatter)
-            # self.logger.addHandler(sh)
+            sh = (
+                self.TqdmLoggingHandler()
+            )  # Safe if tqdm pbar is used, otherwise it behaves like a normal StreamHandler
+            sh.setFormatter(console_formatter)
+            self.logger.addHandler(sh)
 
             # File handler
             if log_file:

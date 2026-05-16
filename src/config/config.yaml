@@ -1,14 +1,21 @@
 # Data processing
-raw_test_images_path: "data/testing/raw/images" # "data/dataset/raw/images"
-raw_test_labels_path: "data/testing/raw/labels" # "data/dataset/raw/labels"
-raw_train_images_path: "data/dataset/raw/images"
-raw_train_labels_path: "data/dataset/raw/labels"
-processed_test_images_path: "data/testing/processed/images" # "data/dataset/processed/images"
-processed_test_labels_path: "data/testing/processed/labels" # "data/dataset/processed/labels"
-processed_train_images_path: "data/dataset/processed/images"
-processed_train_labels_path: "data/dataset/processed/labels"
+raw_test_images_path: "data/dataset/raw/test/images" # "data/testing/raw/images"
+raw_test_labels_path: "data/dataset/raw/test/labels" # "data/testing/raw/labels"
+raw_train_images_path: "data/dataset/raw/train/images"
+raw_train_labels_path: "data/dataset/raw/train/labels"
+processed_test_images_path: "data/dataset/processed/test/images" # "data/testing/processed/images"
+processed_test_labels_path: "data/dataset/processed/test/labels" # "data/testing/processed/labels"
+processed_train_images_path: "data/dataset/processed/train/images"
+processed_train_labels_path: "data/dataset/processed/train/labels"
 resize: True
 resize_size: 640
+
+# Training
+learning_rate: 0.001
+epochs: 100
+batch_size: 8
+shuffle_data: True
+num_workers: 4
 
 # Main pipeline
 process_data: True

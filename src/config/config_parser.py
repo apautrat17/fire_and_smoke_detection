@@ -18,6 +18,13 @@ class Config(BaseModel):
     resize: bool
     resize_size: int
 
+    # Training
+    learning_rate: float
+    epochs: int
+    batch_size: int
+    shuffle_data: bool
+    num_workers: int
+
     # Main pipeline
     process_data: bool
 
