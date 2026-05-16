@@ -5,6 +5,8 @@ The model should then be used in real time with a camera and possibly embedded i
 
 The model is trained with the [DFireDataset](https://github.com/gaia-solutions-on-demand/DFireDataset).
 
+> tensorboard --logdir ./runs/training
+
 ## Example
 
 ## Installation

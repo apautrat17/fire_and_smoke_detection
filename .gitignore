@@ -223,4 +223,5 @@ todo.txt
 data/dataset/
 /data/
 src/logs/
-src/training/
+runs/
+*.pt

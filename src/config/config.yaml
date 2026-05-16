@@ -15,10 +15,10 @@ learning_rate: 0.001
 epochs: 100
 batch_size: 8
 shuffle_data: True
-num_workers: 4
+num_workers: 0
 
 # Main pipeline
-process_data: True
+process_data: False
 
 # Logger
 log_folder_path: "src/logs"

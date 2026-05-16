@@ -1,5 +1,7 @@
+import torch
 from src.main import logger, config
 from src.data.pipeline import ProcessPipeline
+from src.training.train import train
 
 if __name__ == "__main__":
 
@@ -19,3 +21,12 @@ if __name__ == "__main__":
             processed_images_path=config.processed_test_images_path,
             processed_labels_path=config.processed_test_labels_path
         )
+
+    EPOCHS = config.epochs
+    BATCH_SIZE = config.batch_size
+    LR = config.learning_rate
+    SHUFFLE = config.shuffle_data
+    NUM_WORKERS = config.num_workers
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+    train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE)
