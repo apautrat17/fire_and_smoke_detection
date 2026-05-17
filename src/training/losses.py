@@ -14,7 +14,7 @@ def detection_loss(preds, targets, num_classes=2):
 
     obj_t, box_t, cls_t = build_targets(targets, B, H, num_classes, preds.device)
 
-    # objectness
+    # objectness (is there an object in this box ?)
     loss_obj = F.binary_cross_entropy_with_logits(pred_obj, obj_t)
 
     # bbox regression

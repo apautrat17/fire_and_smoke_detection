@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import torch
+from src.training.metrics import nms
 from src.main import logger
 
 def load_image(image_path):
@@ -44,37 +45,57 @@ def build_targets(targets, batch_size, grid_size, num_classes, device):
 
     return obj_target, box_target, cls_target
 
-def decode_predictions(preds):
-    """
-    preds: [B, 5+C, H, W]
-    return list of bbox per image
-    """
+def decode_predictions(preds, conf_thresh=0.5, nms_thresh=0.5):
 
     B = preds.shape[0]
-
-    boxes = []
-
     preds = preds.permute(0, 2, 3, 1)
+
+    all_boxes = []
 
     for b in range(B):
 
         pred = preds[b]
 
-        obj = torch.sigmoid(pred[..., 4])
+        boxes = []
+        scores = []
+        classes = []
 
-        mask = obj > 0.5
+        H, W, _ = pred.shape
 
-        for i in range(mask.shape[0]):
-            for j in range(mask.shape[1]):
+        for i in range(H):
+            for j in range(W):
 
-                if mask[i, j]:
+                obj_score = torch.sigmoid(pred[i, j, 4]).item()
 
-                    x, y, w, h = pred[i, j, :4]
-                    cls = torch.argmax(pred[i, j, 5:])
+                if obj_score < conf_thresh:
+                    continue
 
-                    boxes.append([b, cls.item(), x.item(), y.item(), w.item(), h.item()])
+                cls = torch.argmax(pred[i, j, 5:]).item()
 
-    return boxes
+                x, y, w, h = pred[i, j, :4].tolist()
+
+                boxes.append([x, y, w, h])
+                scores.append(obj_score)
+                classes.append(cls)
+
+        keep = nms(boxes, scores, nms_thresh)
+
+        for idx in keep:
+
+            x, y, w, h = boxes[idx]
+            cls = classes[idx]
+
+            all_boxes.append([
+                b,
+                cls,
+                scores[idx],
+                x,
+                y,
+                w,
+                h
+            ])
+
+    return all_boxes
 
 def decode_targets(targets):
 

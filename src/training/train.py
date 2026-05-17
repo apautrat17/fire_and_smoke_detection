@@ -12,20 +12,23 @@ from src.main import logger, config
 from src.utils.helpers import decode_predictions, decode_targets
 from src.training.losses import detection_loss
 from src.training.metrics import compute_metrics
-
-EPOCHS = config.epochs
-BATCH_SIZE = config.batch_size
-LR = config.learning_rate
-SHUFFLE = config.shuffle_data
-NUM_WORKERS = config.num_workers
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+from src.training.eval import evaluate
 
 def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
+
+    # Dataloaders
     train_loader = create_dataloader(
         images_dir=config.processed_train_images_path,
         labels_dir=config.processed_train_labels_path,
         batch_size=BATCH_SIZE,
         shuffle=SHUFFLE,
+        num_workers=NUM_WORKERS
+    )
+    val_loader = create_dataloader(
+        images_dir=config.processed_test_images_path,
+        labels_dir=config.processed_test_labels_path,
+        batch_size=BATCH_SIZE,
+        shuffle=False,
         num_workers=NUM_WORKERS
     )
 
@@ -68,6 +71,11 @@ def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
         model.train()
         total_loss = 0
 
+        epoch_precision = 0
+        epoch_recall = 0
+        epoch_f1 = 0
+        epoch_ap = 0
+
         batch_pbar = tqdm(total=len(train_loader), desc=f"Epoch {epoch+1}/{EPOCHS}", unit="batch", leave=False)
 
         for batch_idx, (images, targets) in enumerate(train_loader):
@@ -83,14 +91,27 @@ def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
             with torch.no_grad():
 
                 pred_boxes = decode_predictions(preds)
-
                 gt_boxes = decode_targets(targets)
 
-                precision, recall, f1 = compute_metrics(
+                precision, recall, f1, ap = compute_metrics(
                     pred_boxes,
                     gt_boxes,
                     iou_thresh=0.5
                 )
+
+                epoch_precision += precision
+                epoch_recall += recall
+                epoch_f1 += f1
+                epoch_ap += ap
+
+                writer.add_scalar("Train/loss (compute per batch)", loss.item(), global_step)
+                writer.add_scalar("Train/precision", precision, global_step)
+                writer.add_scalar("Train/recall", recall, global_step)
+                writer.add_scalar("Train/f1", f1, global_step)
+                writer.add_scalar("Train/mAP", ap, global_step)
+
+                if batch_idx % 50 == 0:
+                    writer.flush() # Ensure logs are written to disk
 
             optimizer.zero_grad()
             loss.backward()
@@ -100,32 +121,50 @@ def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
 
             batch_pbar.update(1)
             batch_pbar.set_postfix({
-                "loss": loss.item(),
-                "prec": precision,
-                "rec": recall,
-                "f1": f1
+                "loss": f"{loss.item():.4f}",
+                "prec": f"{precision:.4f}",
+                "rec": f"{recall:.4f}",
+                "f1": f"{f1:.4f}",
+                "ap": f"{ap:.4f}"
             })
-
-            writer.add_scalar("Metrics/precision", precision, global_step)
-            writer.add_scalar("Metrics/recall", recall, global_step)
-            writer.add_scalar("Metrics/f1", f1, global_step)
-            writer.add_scalar("Learning_rate", optimizer.param_groups[0]["lr"], global_step)
 
         batch_pbar.close()
 
         # Compute average loss and log metrics
-        avg_loss = total_loss / len(train_loader)
+        n_batches = len(train_loader)
+
+        avg_loss = total_loss / n_batches
+        avg_precision = epoch_precision / n_batches
+        avg_recall = epoch_recall / n_batches
+        avg_f1 = epoch_f1 / n_batches
+        avg_ap = epoch_ap / n_batches
+
+        writer.add_scalar("Train/avg_loss (compute per epoch)", avg_loss, epoch)
         
-        # Log metrics to TensorBoard
-        writer.add_scalar("Loss/train", avg_loss, epoch)
+        val_metrics = evaluate(
+            model,
+            val_loader,
+            DEVICE
+        )
         
         training_pbar.update(1)
+        
+        writer.add_scalar("Val/loss", val_metrics["loss"], epoch)
+        writer.add_scalar("Val/precision", val_metrics["precision"], epoch)
+        writer.add_scalar("Val/recall", val_metrics["recall"], epoch)
+        writer.add_scalar("Val/f1", val_metrics["f1"], epoch)
+        writer.add_scalar("Val/mAP", val_metrics["mAP"], epoch)
+
         training_pbar.set_postfix({
-            "loss": avg_loss,
-            "prec": precision,
-            "rec": recall,
-            "f1": f1
+            "loss": f"{avg_loss:.4f}",
+            "val_loss": f"{val_metrics['loss']:.4f}",
+            "prec": f"{avg_precision:.4f}",
+            "rec": f"{avg_recall:.4f}",
+            "f1": f"{avg_f1:.4f}",
+            "val_f1": f"{val_metrics['f1']:.4f}",
+            "map": f"{avg_ap:.4f}"
         })
+
         logger.info(f"Epoch {epoch}: Loss={avg_loss:.4f}, LR={optimizer.param_groups[0]['lr']:.6f}")
     training_pbar.close()
     writer.close()
