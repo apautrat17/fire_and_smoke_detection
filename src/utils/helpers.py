@@ -1,3 +1,5 @@
+import os
+
 import cv2
 import numpy as np
 import torch
@@ -108,3 +110,14 @@ def decode_targets(targets):
         gt_boxes.append([int(b), int(cls), x, y, w, h])
 
     return gt_boxes
+
+def save_model(model, epoch, save_dir, optimizer, val_f1, checkpoint_name):
+
+    os.makedirs(save_dir, exist_ok=True)
+
+    torch.save({
+        "epoch": epoch,
+        "model_state_dict": model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "val_f1": val_f1
+    }, f"{save_dir}/{checkpoint_name}.pt")

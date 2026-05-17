@@ -1,7 +1,5 @@
 import time
 import torch
-import torch.nn as nn
-import torch.optim as optim
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 from ultralytics import YOLO
@@ -9,7 +7,7 @@ from ultralytics import YOLO
 from src.data.dataloader import create_dataloader
 from src.models.base_model import FireSmokeModel
 from src.main import logger, config
-from src.utils.helpers import decode_predictions, decode_targets
+from src.utils.helpers import decode_predictions, decode_targets, save_model
 from src.training.losses import detection_loss
 from src.training.metrics import compute_metrics
 from src.training.eval import evaluate
@@ -146,6 +144,10 @@ def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
             val_loader,
             DEVICE
         )
+
+        save_dir = "./runs/checkpoints"
+        # save checkpoint at each epoch with val_f1 in filename
+        save_model(model, epoch, save_dir, optimizer, val_metrics["f1"], f"epoch_{epoch}_f1_{val_metrics['f1']:.4f}")
         
         training_pbar.update(1)
         
