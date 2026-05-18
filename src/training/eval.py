@@ -12,6 +12,7 @@ def evaluate(model, loader, device):
     epoch_precision = 0
     epoch_recall = 0
     epoch_f1 = 0
+    epoch_ap = 0
 
     with torch.no_grad():
 
@@ -29,7 +30,7 @@ def evaluate(model, loader, device):
             pred_boxes = decode_predictions(preds)
             gt_boxes = decode_targets(targets)
 
-            precision, recall, f1 = compute_metrics(
+            precision, recall, f1, ap = compute_metrics(
                 pred_boxes,
                 gt_boxes
             )
@@ -37,6 +38,7 @@ def evaluate(model, loader, device):
             epoch_precision += precision
             epoch_recall += recall
             epoch_f1 += f1
+            epoch_ap += ap
 
     n = len(loader)
 
@@ -44,5 +46,6 @@ def evaluate(model, loader, device):
         "loss": total_loss / n,
         "precision": epoch_precision / n,
         "recall": epoch_recall / n,
-        "f1": epoch_f1 / n
+        "f1": epoch_f1 / n,
+        "mAP": epoch_ap / n
     }

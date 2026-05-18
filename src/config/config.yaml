@@ -13,7 +13,7 @@ resize_size: 640
 # Training
 learning_rate: 0.001
 epochs: 15
-batch_size: 16
+batch_size: 8
 shuffle_data: True
 num_workers: 0
 
