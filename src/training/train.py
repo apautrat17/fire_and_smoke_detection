@@ -12,6 +12,7 @@ from src.training.losses import detection_loss
 from src.training.metrics import compute_metrics
 from src.training.eval import evaluate
 
+
 def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
 
     # Dataloaders
@@ -20,16 +21,15 @@ def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
         labels_dir=config.processed_train_labels_path,
         batch_size=BATCH_SIZE,
         shuffle=SHUFFLE,
-        num_workers=NUM_WORKERS
+        num_workers=NUM_WORKERS,
     )
     val_loader = create_dataloader(
         images_dir=config.processed_test_images_path,
         labels_dir=config.processed_test_labels_path,
         batch_size=BATCH_SIZE,
         shuffle=False,
-        num_workers=NUM_WORKERS
+        num_workers=NUM_WORKERS,
     )
-
 
     yolo_model = YOLO("yolov8m.pt")
 
@@ -74,7 +74,12 @@ def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
         epoch_f1 = 0
         epoch_ap = 0
 
-        batch_pbar = tqdm(total=len(train_loader), desc=f"Epoch {epoch+1}/{EPOCHS}", unit="batch", leave=False)
+        batch_pbar = tqdm(
+            total=len(train_loader),
+            desc=f"Epoch {epoch+1}/{EPOCHS}",
+            unit="batch",
+            leave=False,
+        )
 
         for batch_idx, (images, targets) in enumerate(train_loader):
             global_step = epoch * len(train_loader) + batch_idx
@@ -84,7 +89,7 @@ def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
 
             preds = model(images)
 
-            loss = detection_loss(preds, targets, num_classes = 2)
+            loss = detection_loss(preds, targets, num_classes=2)
 
             with torch.no_grad():
 
@@ -92,9 +97,7 @@ def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
                 gt_boxes = decode_targets(targets)
 
                 precision, recall, f1, ap = compute_metrics(
-                    pred_boxes,
-                    gt_boxes,
-                    iou_thresh=0.5
+                    pred_boxes, gt_boxes, iou_thresh=0.5
                 )
 
                 epoch_precision += precision
@@ -102,14 +105,17 @@ def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
                 epoch_f1 += f1
                 epoch_ap += ap
 
-                writer.add_scalar("Train/loss (compute per batch)", loss.item(), global_step)
+                writer.add_scalar(
+                    "Train/loss (compute per batch)", loss.item(), global_step
+                )
                 writer.add_scalar("Train/precision", precision, global_step)
                 writer.add_scalar("Train/recall", recall, global_step)
                 writer.add_scalar("Train/f1", f1, global_step)
                 writer.add_scalar("Train/mAP", ap, global_step)
+                writer.add_scalar("Train/num_pred_boxes", len(pred_boxes), global_step)
 
                 if batch_idx % 50 == 0:
-                    writer.flush() # Ensure logs are written to disk
+                    writer.flush()  # Ensure logs are written to disk
 
             optimizer.zero_grad()
             loss.backward()
@@ -118,13 +124,15 @@ def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
             total_loss += loss.item()
 
             batch_pbar.update(1)
-            batch_pbar.set_postfix({
-                "loss": f"{loss.item():.4f}",
-                "prec": f"{precision:.4f}",
-                "rec": f"{recall:.4f}",
-                "f1": f"{f1:.4f}",
-                "ap": f"{ap:.4f}"
-            })
+            batch_pbar.set_postfix(
+                {
+                    "loss": f"{loss.item():.4f}",
+                    "prec": f"{precision:.4f}",
+                    "rec": f"{recall:.4f}",
+                    "f1": f"{f1:.4f}",
+                    "ap": f"{ap:.4f}",
+                }
+            )
 
         batch_pbar.close()
 
@@ -138,35 +146,42 @@ def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
         avg_ap = epoch_ap / n_batches
 
         writer.add_scalar("Train/avg_loss (compute per epoch)", avg_loss, epoch)
-        
-        val_metrics = evaluate(
-            model,
-            val_loader,
-            DEVICE
-        )
+
+        val_metrics = evaluate(model, val_loader, DEVICE)
 
         save_dir = "./runs/checkpoints"
         # save checkpoint at each epoch with val_f1 in filename
-        save_model(model, epoch, save_dir, optimizer, val_metrics["f1"], f"epoch_{epoch}_f1_{val_metrics['f1']:.4f}")
-        
+        save_model(
+            model,
+            epoch,
+            save_dir,
+            optimizer,
+            val_metrics["f1"],
+            f"epoch_{epoch}_f1_{val_metrics['f1']:.4f}",
+        )
+
         training_pbar.update(1)
-        
+
         writer.add_scalar("Val/loss", val_metrics["loss"], epoch)
         writer.add_scalar("Val/precision", val_metrics["precision"], epoch)
         writer.add_scalar("Val/recall", val_metrics["recall"], epoch)
         writer.add_scalar("Val/f1", val_metrics["f1"], epoch)
         writer.add_scalar("Val/mAP", val_metrics["mAP"], epoch)
 
-        training_pbar.set_postfix({
-            "loss": f"{avg_loss:.4f}",
-            "val_loss": f"{val_metrics['loss']:.4f}",
-            "prec": f"{avg_precision:.4f}",
-            "rec": f"{avg_recall:.4f}",
-            "f1": f"{avg_f1:.4f}",
-            "val_f1": f"{val_metrics['f1']:.4f}",
-            "map": f"{avg_ap:.4f}"
-        })
+        training_pbar.set_postfix(
+            {
+                "loss": f"{avg_loss:.4f}",
+                "val_loss": f"{val_metrics['loss']:.4f}",
+                "prec": f"{avg_precision:.4f}",
+                "rec": f"{avg_recall:.4f}",
+                "f1": f"{avg_f1:.4f}",
+                "val_f1": f"{val_metrics['f1']:.4f}",
+                "map": f"{avg_ap:.4f}",
+            }
+        )
 
-        logger.info(f"Epoch {epoch}: Loss={avg_loss:.4f}, LR={optimizer.param_groups[0]['lr']:.6f}")
+        logger.info(
+            f"Epoch {epoch}: Loss={avg_loss:.4f}, LR={optimizer.param_groups[0]['lr']:.6f}"
+        )
     training_pbar.close()
     writer.close()

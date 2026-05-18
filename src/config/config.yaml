@@ -11,14 +11,15 @@ resize: True
 resize_size: 640
 
 # Training
-learning_rate: 0.001
-epochs: 15
-batch_size: 8
+learning_rate: 0.0005
+epochs: 100
+batch_size: 16
 shuffle_data: True
-num_workers: 0
+num_workers: 8
 
 # Main pipeline
 process_data: False
+train: True
 
 # Logger
 log_folder_path: "src/logs"

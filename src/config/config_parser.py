@@ -27,6 +27,7 @@ class Config(BaseModel):
 
     # Main pipeline
     process_data: bool
+    train: bool
 
     # Logger
     log_folder_path: str

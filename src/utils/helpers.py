@@ -6,23 +6,26 @@ import torch
 from src.training.metrics import nms
 from src.main import logger
 
+
 def load_image(image_path):
     img = cv2.imread(image_path)
     if img is None:
-            logger.critical(f"Cannot load image: {image_path}")
-            raise ValueError(f"Cannot load image: {image_path}")
+        logger.critical(f"Cannot load image: {image_path}")
+        raise ValueError(f"Cannot load image: {image_path}")
     return img
 
+
 def load_label_as_array(label_path):
-    with open(label_path, 'r') as f:
+    with open(label_path, "r") as f:
         label_lines = f.readlines()
-    
+
     labels = []
 
     for line in label_lines:
         class_id, x_center, y_center, width, height = map(float, line.split())
         labels.append((class_id, x_center, y_center, width, height))
     return np.array(labels)
+
 
 def build_targets(targets, batch_size, grid_size, num_classes, device):
 
@@ -38,8 +41,8 @@ def build_targets(targets, batch_size, grid_size, num_classes, device):
     for t in targets:
 
         b, cls, x, y, w, h = t
-        i = int(x * grid_size)
-        j = int(y * grid_size)
+        i = min(int(x * grid_size), grid_size - 1)
+        j = min(int(y * grid_size), grid_size - 1)
 
         obj_target[int(b), j, i] = 1
         box_target[int(b), :, j, i] = torch.tensor([x, y, w, h], device=device)
@@ -47,7 +50,8 @@ def build_targets(targets, batch_size, grid_size, num_classes, device):
 
     return obj_target, box_target, cls_target
 
-def decode_predictions(preds, conf_thresh=0.5, nms_thresh=0.5):
+
+def decode_predictions(preds, conf_thresh=0.2, nms_thresh=0.5):
 
     B = preds.shape[0]
     preds = preds.permute(0, 2, 3, 1)
@@ -55,9 +59,7 @@ def decode_predictions(preds, conf_thresh=0.5, nms_thresh=0.5):
     all_boxes = []
 
     for b in range(B):
-
         pred = preds[b]
-
         boxes = []
         scores = []
         classes = []
@@ -72,9 +74,15 @@ def decode_predictions(preds, conf_thresh=0.5, nms_thresh=0.5):
                 if obj_score < conf_thresh:
                     continue
 
-                cls = torch.argmax(pred[i, j, 5:]).item()
+                cls_logits = pred[i, j, 5:]
+                cls = torch.argmax(cls_logits).item()
 
-                x, y, w, h = pred[i, j, :4].tolist()
+                x, y, w, h = torch.sigmoid(pred[i, j, :4]).tolist()
+
+                x = max(0.0, min(1.0, x))
+                y = max(0.0, min(1.0, y))
+                w = max(0.0, min(1.0, w))
+                h = max(0.0, min(1.0, h))
 
                 boxes.append([x, y, w, h])
                 scores.append(obj_score)
@@ -87,17 +95,10 @@ def decode_predictions(preds, conf_thresh=0.5, nms_thresh=0.5):
             x, y, w, h = boxes[idx]
             cls = classes[idx]
 
-            all_boxes.append([
-                b,
-                cls,
-                scores[idx],
-                x,
-                y,
-                w,
-                h
-            ])
+            all_boxes.append([b, cls, scores[idx], x, y, w, h])
 
     return all_boxes
+
 
 def decode_targets(targets):
 
@@ -111,13 +112,17 @@ def decode_targets(targets):
 
     return gt_boxes
 
+
 def save_model(model, epoch, save_dir, optimizer, val_f1, checkpoint_name):
 
     os.makedirs(save_dir, exist_ok=True)
 
-    torch.save({
-        "epoch": epoch,
-        "model_state_dict": model.state_dict(),
-        "optimizer_state_dict": optimizer.state_dict(),
-        "val_f1": val_f1
-    }, f"{save_dir}/{checkpoint_name}.pt")
+    torch.save(
+        {
+            "epoch": epoch,
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "val_f1": val_f1,
+        },
+        f"{save_dir}/{checkpoint_name}.pt",
+    )
