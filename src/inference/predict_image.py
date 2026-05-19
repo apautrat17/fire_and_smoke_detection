@@ -2,6 +2,7 @@ import torch
 from src.training.eval import decode_predictions
 from src.data.preprocess import letterbox
 from src.data.augment import basic_transforms
+from src.main import config
 
 
 def load_model_from_checkpoint(model, checkpoint_path, device):
@@ -22,7 +23,9 @@ def predict_image(model, image, resize_size, device):
 
         preds = model(image)
 
-        all_boxes = decode_predictions(preds)
+        all_boxes = decode_predictions(
+            preds, conf_thresh=config.conf_threshold, nms_thresh=config.nms_threshold
+        )
 
         # Reformat from [b, cls, score, x, y, w, h] to [cls, x, y, w, h]
         pred_boxes = [

@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import torch
 from src.training.metrics import nms
-from src.main import logger
+from src.main import logger, config
 
 
 def load_image(image_path):
@@ -51,7 +51,9 @@ def build_targets(targets, batch_size, grid_size, num_classes, device):
     return obj_target, box_target, cls_target
 
 
-def decode_predictions(preds, conf_thresh=0.2, nms_thresh=0.5):
+def decode_predictions(
+    preds, conf_thresh=config.conf_threshold, nms_thresh=config.nms_threshold
+):
 
     B = preds.shape[0]
     preds = preds.permute(0, 2, 3, 1)
@@ -126,3 +128,38 @@ def save_model(model, epoch, save_dir, optimizer, val_f1, checkpoint_name):
         },
         f"{save_dir}/{checkpoint_name}.pt",
     )
+
+
+def yolo_to_pascal(boxes, img_w, img_h):
+
+    pascal_boxes = []
+
+    for cls, xc, yc, w, h in boxes:
+
+        x1 = (xc - w / 2) * img_w
+        y1 = (yc - h / 2) * img_h
+        x2 = (xc + w / 2) * img_w
+        y2 = (yc + h / 2) * img_h
+
+        pascal_boxes.append([x1, y1, x2, y2, cls])
+
+    return np.array(pascal_boxes, dtype=np.float32)
+
+
+def pascal_to_yolo(boxes, img_w, img_h, class_labels):
+
+    yolo_boxes = []
+
+    for (x1, y1, x2, y2), cls in zip(boxes, class_labels):
+
+        xc = (x1 + x2) / 2 / img_w
+        yc = (y1 + y2) / 2 / img_h
+        w = (x2 - x1) / img_w
+        h = (y2 - y1) / img_h
+
+        yolo_boxes.append([cls, xc, yc, w, h])
+
+    if len(yolo_boxes) == 0:
+        return np.zeros((0, 5), dtype=np.float32)
+
+    return np.array(yolo_boxes, dtype=np.float32)

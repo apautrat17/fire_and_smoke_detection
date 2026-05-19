@@ -2,7 +2,7 @@ import time
 import torch
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
-from ultralytics import YOLO
+from torch.optim.lr_scheduler import LambdaLR, CosineAnnealingLR
 
 from src.data.dataloader import create_dataloader
 from src.models.base_model import create_fire_smoke_model
@@ -13,27 +13,44 @@ from src.training.metrics import compute_metrics
 from src.training.eval import evaluate
 
 
-def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
+def train(
+    EPOCHS,
+    BATCH_SIZE,
+    LR,
+    SHUFFLE,
+    NUM_WORKERS,
+    DEVICE,
+    WEIGHT_DECAY,
+    WARMUP_EPOCHS,
+    COS_LR,
+    CLOSE_MOSAIC,
+):
 
     # Dataloaders
-    train_loader = create_dataloader(
-        images_dir=config.processed_train_images_path,
-        labels_dir=config.processed_train_labels_path,
-        batch_size=BATCH_SIZE,
-        shuffle=SHUFFLE,
-        num_workers=NUM_WORKERS,
-    )
+
     val_loader = create_dataloader(
         images_dir=config.processed_test_images_path,
         labels_dir=config.processed_test_labels_path,
         batch_size=BATCH_SIZE,
         shuffle=False,
         num_workers=NUM_WORKERS,
+        current_epoch=0,
+        close_mosaic=0,  # Disable mosaic for validation
     )
 
     model = create_fire_smoke_model()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+
+    def warmup_lambda(epoch):
+        if epoch < WARMUP_EPOCHS:
+            return float(epoch + 1) / WARMUP_EPOCHS
+        return 1.0
+
+    warmup_scheduler = LambdaLR(optimizer, lr_lambda=warmup_lambda)
+    scheduler = (
+        CosineAnnealingLR(optimizer, T_max=EPOCHS, eta_min=1e-6) if COS_LR else None
+    )
 
     run_name = f"yolov8m_finetune_{time.strftime('%Y%m%d-%H%M%S')}"
 
@@ -42,6 +59,16 @@ def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
     training_pbar = tqdm(total=EPOCHS, desc="Training epochs", unit="epoch")
 
     for epoch in range(EPOCHS):
+
+        train_loader = create_dataloader(
+            images_dir=config.processed_train_images_path,
+            labels_dir=config.processed_train_labels_path,
+            batch_size=BATCH_SIZE,
+            shuffle=SHUFFLE,
+            num_workers=NUM_WORKERS,
+            current_epoch=epoch,
+            close_mosaic=CLOSE_MOSAIC,
+        )
 
         model.train()
         total_loss = 0
@@ -156,6 +183,13 @@ def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
                 "map": f"{avg_ap:.4f}",
             }
         )
+
+        # Schedulers:
+        if epoch < WARMUP_EPOCHS:
+            warmup_scheduler.step()
+        else:
+            if COS_LR:
+                scheduler.step()
 
         logger.info(
             f"Epoch {epoch}: Loss={avg_loss:.4f}, LR={optimizer.param_groups[0]['lr']:.6f}"

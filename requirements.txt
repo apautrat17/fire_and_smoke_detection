@@ -5,3 +5,4 @@ numpy == 2.4.4
 tqdm == 4.67.3
 ultralytics == 8.4.51
 tensorboard == 2.20.0
+albumentations == 2.0.8

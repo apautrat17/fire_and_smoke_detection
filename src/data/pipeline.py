@@ -13,6 +13,27 @@ class ProcessPipeline:
         self.resize = resize
         self.resize_size = resize_size
 
+    def process_image_and_label(
+        self, image_path: str, label_path: str
+    ) -> tuple[np.ndarray, np.ndarray]:
+
+        image = load_image(image_path)
+        labels = load_label_as_array(label_path)
+
+        if self.resize:
+            image, labels = letterbox(image, labels, resize_size=self.resize_size)
+
+        return image, labels
+
+    def unprocess_label(
+        self, image: np.ndarray, labels: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+
+        if self.resize:
+            labels = unletterbox(image, labels)
+
+        return labels
+
     def run(
         self,
         raw_images_path: str = None,

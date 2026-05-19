@@ -1,3 +1,6 @@
+from src.main import config
+
+
 def box_iou(box1, box2):
     x1, y1, w1, h1 = box1
     x2, y2, w2, h2 = box2
@@ -15,16 +18,12 @@ def box_iou(box1, box2):
     return inter / union if union > 0 else 0.0
 
 
-def nms(boxes, scores, iou_threshold=0.5):
+def nms(boxes, scores, iou_threshold=config.iou_threshold):
 
     if len(boxes) == 0:
         return []
 
-    indices = sorted(
-        range(len(scores)),
-        key=lambda i: scores[i],
-        reverse=True
-    )
+    indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)
 
     keep = []
 
@@ -48,7 +47,6 @@ def nms(boxes, scores, iou_threshold=0.5):
 
 
 def compute_metrics(pred_boxes, gt_boxes, iou_thresh=0.5):
-
     """
     pred_boxes format:
     [b, cls, conf, x, y, w, h]
@@ -74,10 +72,7 @@ def compute_metrics(pred_boxes, gt_boxes, iou_thresh=0.5):
             if pb != gb or pcls != gcls:
                 continue
 
-            iou = box_iou(
-                [px, py, pw, ph],
-                [gx, gy, gw, gh]
-            )
+            iou = box_iou([px, py, pw, ph], [gx, gy, gw, gh])
 
             if iou > best_iou:
                 best_iou = iou
@@ -94,10 +89,7 @@ def compute_metrics(pred_boxes, gt_boxes, iou_thresh=0.5):
     precision = tp / (tp + fp + 1e-6)
     recall = tp / (tp + fn + 1e-6)
 
-    f1 = (
-        2 * precision * recall /
-        (precision + recall + 1e-6)
-    )
+    f1 = 2 * precision * recall / (precision + recall + 1e-6)
 
     # simplified AP approximation
     ap = precision * recall

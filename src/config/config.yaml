@@ -1,4 +1,4 @@
-# Data processing
+# Data paths
 raw_test_images_path: "data/dataset/raw/test/images" # "data/testing/raw/images"
 raw_test_labels_path: "data/dataset/raw/test/labels" # "data/testing/raw/labels"
 raw_train_images_path: "data/dataset/raw/train/images"
@@ -7,21 +7,57 @@ processed_test_images_path: "data/dataset/processed/test/images" # "data/testing
 processed_test_labels_path: "data/dataset/processed/test/labels" # "data/testing/processed/labels"
 processed_train_images_path: "data/dataset/processed/train/images"
 processed_train_labels_path: "data/dataset/processed/train/labels"
+
+# Data processing / augmentation
 resize: True
 resize_size: 1024
+
+horizontal_flip_prob: 0.5
+
+shift_limit: 0.1
+scale_limit: 0.5
+rotate_limit: 10
+border_mode: 0
+shift_scale_rotate_prob: 0.5
+
+brightness_limit: 0.2
+contrast_limit: 0.2
+random_brightness_contrast_prob: 0.3
+
+hsv_h_shift_limit: 5
+hsv_s_shift_limit: 20
+hsv_v_shift_limit: 20
+hsv_prob: 0.3
+
+gaussian_blur_limit: [3, 5]
+gaussian_blur_prob: 0.2
+
+bbox_min_visibility: 0.2
+
+mixup_prob: 0.1
+mixup_limits: [0.4, 0.6]
+
+mosaic_prob: 1.0
 
 # Model
 nb_in_channels: 576
 num_classes: 2
+conf_threshold: 0.3
+nms_threshold: 0.1
+iou_threshold: 0.5
 
 # Training
-learning_rate: 0.0005
-epochs: 100
+learning_rate: 0.001
+epochs: 150
 batch_size: 16
 shuffle_data: True
 num_workers: 8
+weight_decay: 0.0005
+warmup_epochs: 3
+cos_lr: true
+close_mosaic: 10
 
-device: "cuda" # "cuda" if torch.cuda.is_available() else "cpu"
+device: "cuda"
 
 # Main pipeline
 process_data: False
