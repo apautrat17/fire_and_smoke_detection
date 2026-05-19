@@ -61,8 +61,8 @@ device: "cuda"
 
 # Main pipeline
 process_data: False
-train: False
-inference_image: True
+train: True
+inference_image: False
 inference_video: False
 
 # Logger

@@ -30,10 +30,25 @@ if __name__ == "__main__":
     SHUFFLE = config.shuffle_data
     NUM_WORKERS = config.num_workers
     DEVICE = config.device  # "cuda" if torch.cuda.is_available() else "cpu"
+    WEIGHT_DECAY = config.weight_decay
+    WARMUP_EPOCHS = config.warmup_epochs
+    COS_LR = config.cos_lr
+    CLOSE_MOSAIC = config.close_mosaic
 
     if config.train == True:
 
-        train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE)
+        train(
+            EPOCHS,
+            BATCH_SIZE,
+            LR,
+            SHUFFLE,
+            NUM_WORKERS,
+            DEVICE,
+            WEIGHT_DECAY,
+            WARMUP_EPOCHS,
+            COS_LR,
+            CLOSE_MOSAIC,
+        )
 
     if config.inference_image == True:
         from src.models.base_model import create_fire_smoke_model
