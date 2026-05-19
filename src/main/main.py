@@ -24,13 +24,33 @@ if __name__ == "__main__":
             processed_labels_path=config.processed_test_labels_path,
         )
 
+    EPOCHS = config.epochs
+    BATCH_SIZE = config.batch_size
+    LR = config.learning_rate
+    SHUFFLE = config.shuffle_data
+    NUM_WORKERS = config.num_workers
+    DEVICE = config.device  # "cuda" if torch.cuda.is_available() else "cpu"
+
     if config.train == True:
 
-        EPOCHS = config.epochs
-        BATCH_SIZE = config.batch_size
-        LR = config.learning_rate
-        SHUFFLE = config.shuffle_data
-        NUM_WORKERS = config.num_workers
-        DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-
         train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE)
+
+    if config.inference_image == True:
+        from src.models.base_model import create_fire_smoke_model
+        from src.visualization.visualize import visualize_predictions
+        from src.inference.predict_image import (
+            load_model_from_checkpoint,
+            predict_image,
+        )
+        from src.utils.helpers import load_image
+
+        model = create_fire_smoke_model()
+        infer_model = load_model_from_checkpoint(
+            model, "runs/checkpoints/epoch_81_f1_0.0128.pt", DEVICE
+        )
+
+        image = load_image("data/dataset/raw/test/images/WEB10751.jpg")
+
+        pred_boxes = predict_image(infer_model, image, config.resize_size, DEVICE)
+
+        visualize_predictions(image, pred_boxes)

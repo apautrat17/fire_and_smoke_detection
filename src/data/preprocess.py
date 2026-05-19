@@ -1,21 +1,35 @@
 import cv2
 import numpy as np
 
-def resize_image(image: np.ndarray, new_w: int, new_h: int, new_size: int, pad_x: int, pad_y: int) -> np.ndarray:
+
+def resize_image(
+    image: np.ndarray, new_w: int, new_h: int, new_size: int, pad_x: int, pad_y: int
+) -> np.ndarray:
     # resize image
     image_resized = cv2.resize(image, (new_w, new_h))
 
     image_padded = cv2.copyMakeBorder(
         image_resized,
-        pad_y, new_size - new_h - pad_y,
-        pad_x, new_size - new_w - pad_x,
+        pad_y,
+        new_size - new_h - pad_y,
+        pad_x,
+        new_size - new_w - pad_x,
         cv2.BORDER_CONSTANT,
-        value=[0, 0, 0]
+        value=[0, 0, 0],
     )
 
     return image_padded
 
-def resize_labels(labels: np.ndarray, w: int, h: int, new_size: int, pad_x: int, pad_y: int, scale: float) -> np.ndarray:
+
+def resize_labels(
+    labels: np.ndarray,
+    w: int,
+    h: int,
+    new_size: int,
+    pad_x: int,
+    pad_y: int,
+    scale: float,
+) -> np.ndarray:
     new_labels = []
 
     for cls, x_c, y_c, bw, bh in labels:
@@ -46,7 +60,8 @@ def resize_labels(labels: np.ndarray, w: int, h: int, new_size: int, pad_x: int,
 
     return np.array(new_labels, dtype=np.float32)
 
-def letterbox(image, labels, resize_size=640):
+
+def letterbox(image, labels=None, resize_size=640):
     """
     Resize + padding YOLO-style (letterbox)
     labels must be in YOLO format: [class, x_center, y_center, w, h]
@@ -67,9 +82,44 @@ def letterbox(image, labels, resize_size=640):
     pad_y = (new_size - new_h) // 2
 
     image_padded = resize_image(image, new_w, new_h, new_size, pad_x, pad_y)
-    labels_resized = resize_labels(labels, w, h, new_size, pad_x, pad_y, scale)        
+    labels_resized = (
+        resize_labels(labels, w, h, new_size, pad_x, pad_y, scale)
+        if labels is not None
+        else None
+    )
 
     return image_padded, labels_resized
 
+
+def unletterbox(image, labels):
+    """
+    Unresize + unpad YOLO-style (unletterbox)
+    labels must be in YOLO format: [class, x_center, y_center, w, h]
+    all normalized [0,1]
+    """
+
+    h, w = image.shape[:2]
+
+    # find the scale and padding used for letterbox
+    scale = min(w / h, h / w)
+
+    new_w = int(w * scale)
+    new_h = int(h * scale)
+
+    pad_x = (w - new_w) // 2
+    pad_y = (h - new_h) // 2
+
+    # # remove padding
+    # image_unpadded = image[pad_y : pad_y + new_h, pad_x : pad_x + new_w]
+
+    # # unresize
+    # image_unresized = cv2.resize(image_unpadded, (w, h))
+
+    # unresize labels
+    labels_unresized = resize_labels(labels, w, h, w, pad_x, pad_y, 1 / scale)
+
+    return labels_unresized  # image_unresized, labels_unresized
+
+
 def normalize_pixels(image):
-    return image.astype('float32') / 255.0
+    return image.astype("float32") / 255.0

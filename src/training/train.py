@@ -5,7 +5,7 @@ from torch.utils.tensorboard import SummaryWriter
 from ultralytics import YOLO
 
 from src.data.dataloader import create_dataloader
-from src.models.base_model import FireSmokeModel
+from src.models.base_model import create_fire_smoke_model
 from src.main import logger, config
 from src.utils.helpers import decode_predictions, decode_targets, save_model
 from src.training.losses import detection_loss
@@ -31,30 +31,7 @@ def train(EPOCHS, BATCH_SIZE, LR, SHUFFLE, NUM_WORKERS, DEVICE):
         num_workers=NUM_WORKERS,
     )
 
-    yolo_model = YOLO("yolov8m.pt")
-
-    yolo_nn = yolo_model.model
-
-    feature_maps = {}
-
-    def save_features(module, inputs, output):
-        feature_maps["x"] = output
-
-    hook_layer = yolo_nn.model[9]
-    hook_layer.register_forward_hook(save_features)
-
-    class YOLOFeatureBackbone(torch.nn.Module):
-        def __init__(self, yolo_model, hook_key="x"):
-            super().__init__()
-            self.yolo_model = yolo_model
-            self.hook_key = hook_key
-
-        def forward(self, x):
-            _ = self.yolo_model(x)
-            return feature_maps[self.hook_key]
-
-    backbone = YOLOFeatureBackbone(yolo_nn)
-    model = FireSmokeModel(backbone, in_channels=576).to(DEVICE)
+    model = create_fire_smoke_model()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
 

@@ -18,6 +18,10 @@ class Config(BaseModel):
     resize: bool
     resize_size: int
 
+    # Model
+    nb_in_channels: int
+    num_classes: int
+
     # Training
     learning_rate: float
     epochs: int
@@ -25,9 +29,13 @@ class Config(BaseModel):
     shuffle_data: bool
     num_workers: int
 
+    device: str
+
     # Main pipeline
     process_data: bool
     train: bool
+    inference_image: bool
+    inference_video: bool
 
     # Logger
     log_folder_path: str

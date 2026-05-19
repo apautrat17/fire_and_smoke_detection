@@ -8,7 +8,11 @@ processed_test_labels_path: "data/dataset/processed/test/labels" # "data/testing
 processed_train_images_path: "data/dataset/processed/train/images"
 processed_train_labels_path: "data/dataset/processed/train/labels"
 resize: True
-resize_size: 640
+resize_size: 1024
+
+# Model
+nb_in_channels: 576
+num_classes: 2
 
 # Training
 learning_rate: 0.0005
@@ -17,9 +21,13 @@ batch_size: 16
 shuffle_data: True
 num_workers: 8
 
+device: "cuda" # "cuda" if torch.cuda.is_available() else "cpu"
+
 # Main pipeline
 process_data: False
-train: True
+train: False
+inference_image: True
+inference_video: False
 
 # Logger
 log_folder_path: "src/logs"

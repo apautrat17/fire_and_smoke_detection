@@ -5,6 +5,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from src.utils.helpers import load_image
 from src.data.collate import collate_fn
+from src.data.augment import basic_transforms
+
 
 class FireSmokeDataset(Dataset):
 
@@ -13,18 +15,15 @@ class FireSmokeDataset(Dataset):
         self.images_dir = images_dir
         self.labels_dir = labels_dir
 
-        self.image_files = sorted([
-            f for f in os.listdir(images_dir)
-            if f.endswith((".jpg", ".png", ".jpeg"))
-        ])
+        self.image_files = sorted(
+            [f for f in os.listdir(images_dir) if f.endswith((".jpg", ".png", ".jpeg"))]
+        )
 
     def __len__(self):
         return len(self.image_files)
-    
+
     def transform(self, image):
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) # Convert BGR to RGB
-        image = torch.from_numpy(image).permute(2, 0, 1).float() / 255.0
-        return image
+        return basic_transforms(image)
 
     def __getitem__(self, idx):
 
@@ -33,8 +32,7 @@ class FireSmokeDataset(Dataset):
         image_path = os.path.join(self.images_dir, image_name)
 
         label_path = os.path.join(
-            self.labels_dir,
-            image_name.rsplit(".", 1)[0] + ".txt"
+            self.labels_dir, image_name.rsplit(".", 1)[0] + ".txt"
         )
 
         # Load image
@@ -50,20 +48,17 @@ class FireSmokeDataset(Dataset):
         labels = torch.tensor(labels, dtype=torch.float32)
 
         return image, labels
-    
+
 
 def create_dataloader(
     images_dir: str,
     labels_dir: str,
     batch_size: int = 8,
     shuffle: bool = True,
-    num_workers: int = 4
+    num_workers: int = 4,
 ):
 
-    dataset = FireSmokeDataset(
-        images_dir=images_dir,
-        labels_dir=labels_dir
-    )
+    dataset = FireSmokeDataset(images_dir=images_dir, labels_dir=labels_dir)
 
     loader = DataLoader(
         dataset,
@@ -71,7 +66,7 @@ def create_dataloader(
         shuffle=shuffle,
         num_workers=num_workers,
         pin_memory=True,
-        collate_fn=collate_fn
+        collate_fn=collate_fn,
     )
 
     return loader
