@@ -13,12 +13,10 @@ def parse_args():
     parser.add_argument("--config", type=str, default="src/config/config.yaml")
 
     # overrides optionnels
-    parser.add_argument("--model", type=str)
-    parser.add_argument("--generate-report", dest="generate_report", type=str2bool)
-    parser.add_argument("--extract-database", dest="extract_database", type=str2bool)
     parser.add_argument("--log-level", dest="log_level", type=str)
 
     return parser.parse_args()
+
 
 def load_config(config_path: str) -> Config:
     """
@@ -40,6 +38,7 @@ def str2bool(v):
     if isinstance(v, bool):
         return v
     return v.lower() in ("true", "1", "yes")
+
 
 def override_config(config_dict: dict, args) -> dict:
     for key, value in vars(args).items():

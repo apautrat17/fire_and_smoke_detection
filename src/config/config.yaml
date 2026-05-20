@@ -1,70 +1,59 @@
-# Data paths
-raw_test_images_path: "data/dataset/raw/test/images" # "data/testing/raw/images"
-raw_test_labels_path: "data/dataset/raw/test/labels" # "data/testing/raw/labels"
-raw_train_images_path: "data/dataset/raw/train/images"
-raw_train_labels_path: "data/dataset/raw/train/labels"
-processed_test_images_path: "data/dataset/processed/test/images" # "data/testing/processed/images"
-processed_test_labels_path: "data/dataset/processed/test/labels" # "data/testing/processed/labels"
-processed_train_images_path: "data/dataset/processed/train/images"
-processed_train_labels_path: "data/dataset/processed/train/labels"
-
 # Data processing / augmentation
-resize: True
-resize_size: 1024
+data_yaml_path: "src/config/dfire.yaml"
 
-horizontal_flip_prob: 0.5
-
-shift_limit: 0.1
-scale_limit: 0.5
-rotate_limit: 10
-border_mode: 0
-shift_scale_rotate_prob: 0.5
-
-brightness_limit: 0.2
-contrast_limit: 0.2
-random_brightness_contrast_prob: 0.3
-
-hsv_h_shift_limit: 5
-hsv_s_shift_limit: 20
-hsv_v_shift_limit: 20
-hsv_prob: 0.3
-
-gaussian_blur_limit: [3, 5]
-gaussian_blur_prob: 0.2
-
-bbox_min_visibility: 0.2
-
-mixup_prob: 0.1
-mixup_limits: [0.4, 0.6]
+imgsz: 832
 
 mosaic_prob: 1.0
+close_mosaic_epoch: 10
 
-# Model
-nb_in_channels: 576
-num_classes: 2
-conf_threshold: 0.3
-nms_threshold: 0.1
-iou_threshold: 0.5
+mixup_prob: 0.1
+
+hsv_h: 0.015
+hsv_s: 0.7
+hsv_v: 0.4
+
+degrees: 10
+translate: 0.1
+scale: 0.5
+fliplr: 0.5
 
 # Training
 learning_rate: 0.001
 epochs: 150
-batch_size: 16
+batch_size: 8
+optimizer: "AdamW"
 shuffle_data: True
 num_workers: 8
 weight_decay: 0.0005
 warmup_epochs: 3
 cos_lr: true
-close_mosaic: 10
 
 device: "cuda"
-
-# Main pipeline
-process_data: False
-train: True
-inference_image: False
-inference_video: False
 
 # Logger
 log_folder_path: "src/logs"
 log_level: "INFO"
+
+# Tensorboard
+tensorboard_log_dir: "runs/training"
+
+# Inference
+model_path: runs/detect/runs/training/yolov8m_finetune_20260520-113028/weights/best.pt
+conf_threshold: 0.3
+
+# Image inference
+image_folder_path: "data/dataset/raw/test/images"
+image_name: "WEB10751.jpg"
+random_image: True
+stop_after_one: False
+
+# Video inference
+video_path: "data/video_test/incendie_centrale.mp4"
+show_video: True
+save_video: False
+
+# Main pipeline
+do_train: True
+do_inference_image: False
+do_inference_video: False
+

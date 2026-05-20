@@ -1,35 +1,54 @@
-import torch
-from src.training.eval import decode_predictions
-from src.data.preprocess import letterbox
-from src.data.augment import basic_transforms
-from src.main import config
+import os
+import cv2
 
 
-def load_model_from_checkpoint(model, checkpoint_path, device):
-    checkpoint = torch.load(checkpoint_path, map_location=device)
-    model.load_state_dict(checkpoint["model_state_dict"])
-    model.to(device)
-    model.eval()
-    return model
+def get_random_image_name_in_folder(folder_path):
+    import os
+    import random
+
+    image_files = [
+        f
+        for f in os.listdir(folder_path)
+        if f.lower().endswith((".jpg", ".jpeg", ".png"))
+    ]
+    if not image_files:
+        raise ValueError(f"No image files found in {folder_path}")
+    return os.path.join(folder_path, random.choice(image_files))
 
 
-def predict_image(model, image, resize_size, device):
-    model.eval()
+def predict_image(
+    model,
+    image_path: str,
+    folder_path: str,
+    conf_threshold: float = 0.5,
+    random: bool = False,
+    stop_after_one: bool = True,
+):
 
-    with torch.no_grad():
-        image = letterbox(image, resize_size=resize_size)[0]
+    if not random:
+        if not os.path.isdir(folder_path):
+            raise ValueError(f"Folder {folder_path} does not exist")
+        if not os.path.isfile(image_path):
+            raise ValueError(f"Image file {image_path} does not exist")
+        results = model(image_path, conf=conf_threshold)
+        return results[0].show()
 
-        image = basic_transforms(image).to(device).unsqueeze(0)
+    if random and stop_after_one:
+        random_image_path = get_random_image_name_in_folder(folder_path)
+        results = model(random_image_path, conf=conf_threshold)
+        return results[0].show()
 
-        preds = model(image)
+    else:
+        while True:
+            random_image_path = get_random_image_name_in_folder(folder_path)
+            print(f"Predicting on image: {random_image_path}")
+            results = model(random_image_path, conf=conf_threshold)
 
-        all_boxes = decode_predictions(
-            preds, conf_thresh=config.conf_threshold, nms_thresh=config.nms_threshold
-        )
+            annotated = results[0].plot()
 
-        # Reformat from [b, cls, score, x, y, w, h] to [cls, x, y, w, h]
-        pred_boxes = [
-            [cls, x, y, w, h, score] for b, cls, score, x, y, w, h in all_boxes
-        ]
+            cv2.imshow("Prediction (q pour quitter)", annotated)
+            key = cv2.waitKey(0) & 0xFF
+            cv2.destroyAllWindows()
 
-    return pred_boxes
+            if key == ord("q"):
+                break

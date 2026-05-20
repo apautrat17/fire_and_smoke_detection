@@ -1,71 +1,39 @@
-import torch
+from ultralytics import YOLO
 from src.main import logger, config
-from src.data.pipeline import ProcessPipeline
 from src.training.train import train
+from src.inference.predict_image import predict_image
+from src.inference.predict_video import predict_video
 
 if __name__ == "__main__":
 
     logger.info("Starting project...")
 
-    if config.process_data:
-        process_pipeline = ProcessPipeline(
-            resize=config.resize, resize_size=config.resize_size
-        )
-        process_pipeline.run(
-            raw_images_path=config.raw_train_images_path,
-            raw_labels_path=config.raw_train_labels_path,
-            processed_images_path=config.processed_train_images_path,
-            processed_labels_path=config.processed_train_labels_path,
-        )
-        process_pipeline.run(
-            raw_images_path=config.raw_test_images_path,
-            raw_labels_path=config.raw_test_labels_path,
-            processed_images_path=config.processed_test_images_path,
-            processed_labels_path=config.processed_test_labels_path,
-        )
+    if config.do_train == True:
+        train()
 
-    EPOCHS = config.epochs
-    BATCH_SIZE = config.batch_size
-    LR = config.learning_rate
-    SHUFFLE = config.shuffle_data
-    NUM_WORKERS = config.num_workers
-    DEVICE = config.device  # "cuda" if torch.cuda.is_available() else "cpu"
-    WEIGHT_DECAY = config.weight_decay
-    WARMUP_EPOCHS = config.warmup_epochs
-    COS_LR = config.cos_lr
-    CLOSE_MOSAIC = config.close_mosaic
+    if config.do_inference_image == True:
 
-    if config.train == True:
+        infer_model = YOLO(config.model_path)
 
-        train(
-            EPOCHS,
-            BATCH_SIZE,
-            LR,
-            SHUFFLE,
-            NUM_WORKERS,
-            DEVICE,
-            WEIGHT_DECAY,
-            WARMUP_EPOCHS,
-            COS_LR,
-            CLOSE_MOSAIC,
+        predict_image(
+            infer_model,
+            image_path=config.image_name,
+            folder_path=config.image_folder_path,
+            conf_threshold=config.conf_threshold,
+            random=config.random_image,
+            stop_after_one=config.stop_after_one,
         )
 
-    if config.inference_image == True:
-        from src.models.base_model import create_fire_smoke_model
-        from src.visualization.visualize import visualize_predictions
-        from src.inference.predict_image import (
-            load_model_from_checkpoint,
-            predict_image,
-        )
-        from src.utils.helpers import load_image
+    if config.do_inference_video == True:
 
-        model = create_fire_smoke_model()
-        infer_model = load_model_from_checkpoint(
-            model, "runs/checkpoints/epoch_81_f1_0.0128.pt", DEVICE
+        infer_model = YOLO(
+            "runs/detect/runs/training/yolov8m_finetune_20260520-113028/weights/best.pt"
         )
 
-        image = load_image("data/dataset/raw/test/images/WEB10751.jpg")
-
-        pred_boxes = predict_image(infer_model, image, config.resize_size, DEVICE)
-
-        visualize_predictions(image, pred_boxes)
+        predict_video(
+            infer_model,
+            video_path=config.video_path,
+            conf_threshold=config.conf_threshold,
+            show=config.show_video,
+            save=config.save_video,
+        )
