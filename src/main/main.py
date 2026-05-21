@@ -19,6 +19,7 @@ if __name__ == "__main__":
             infer_model,
             image_path=config.image_name,
             folder_path=config.image_folder_path,
+            test_image_path=config.test_image_path,
             conf_threshold=config.conf_threshold,
             random=config.random_image,
             stop_after_one=config.stop_after_one,

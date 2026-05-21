@@ -14,6 +14,11 @@ def parse_args():
 
     # overrides optionnels
     parser.add_argument("--log-level", dest="log_level", type=str)
+    parser.add_argument("--do_train", action="store_true")
+    parser.add_argument("--do_inference_image", action="store_true")
+    parser.add_argument("--do_inference_video", action="store_true")
+    parser.add_argument("--image_path", dest="test_image_path", type=str)
+    parser.add_argument("--video_path", dest="video_path", type=str)
 
     return parser.parse_args()
 
@@ -34,15 +39,11 @@ def load_config(config_path: str) -> Config:
     return Config(**configuration)
 
 
-def str2bool(v):
-    if isinstance(v, bool):
-        return v
-    return v.lower() in ("true", "1", "yes")
-
-
 def override_config(config_dict: dict, args) -> dict:
     for key, value in vars(args).items():
         if key == "config":
+            continue
+        if isinstance(value, bool) and value is False:
             continue
         if value is not None:
             config_dict[key] = value
@@ -51,7 +52,9 @@ def override_config(config_dict: dict, args) -> dict:
 
 def get_config() -> Config:
     args = parse_args()
-    config_dict = load_config(args.config).__dict__
+    if sum([args.do_train, args.do_inference_image, args.do_inference_video]) > 1:
+        raise ValueError("Choose only one mode among train / image / video")
+    config_dict = load_config(args.config).model_dump()
     config_dict = override_config(config_dict, args)
     return Config(**config_dict)
 

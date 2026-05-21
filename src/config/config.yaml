@@ -44,6 +44,7 @@ conf_threshold: 0.3
 # Image inference
 image_folder_path: "data/dataset/raw/test/images"
 image_name: "WEB10751.jpg"
+test_image_path: "data/dataset/raw/test/images/WEB10751.jpg"
 random_image: True
 stop_after_one: False
 

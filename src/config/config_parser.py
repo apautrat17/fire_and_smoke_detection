@@ -52,6 +52,7 @@ class Config(BaseModel):
     # Image inference
     image_folder_path: str
     image_name: str
+    test_image_path: str
     random_image: bool
     stop_after_one: bool
 

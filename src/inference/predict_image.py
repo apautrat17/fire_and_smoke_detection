@@ -20,12 +20,18 @@ def predict_image(
     model,
     image_path: str,
     folder_path: str,
+    test_image_path: str,
     conf_threshold: float = 0.5,
     random: bool = False,
     stop_after_one: bool = True,
 ):
 
-    if not random:
+    if test_image_path is not None:
+        if not os.path.isfile(test_image_path):
+            raise ValueError(f"Image file {test_image_path} does not exist")
+        results = model(test_image_path, conf=conf_threshold)
+        return results[0].show()
+    elif not random:
         if not os.path.isdir(folder_path):
             raise ValueError(f"Folder {folder_path} does not exist")
         if not os.path.isfile(image_path):
