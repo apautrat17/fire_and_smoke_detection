@@ -19,7 +19,7 @@ fliplr: 0.5
 
 # Training
 learning_rate: 0.001
-epochs: 150
+epochs: 100
 batch_size: 8
 optimizer: "AdamW"
 shuffle_data: True
@@ -48,12 +48,12 @@ random_image: True
 stop_after_one: False
 
 # Video inference
-video_path: "data/video_test/incendie_centrale.mp4"
+video_path: "data/video_test/firefighter_pov_3.mp4"
 show_video: True
-save_video: False
+save_video: True
 
 # Main pipeline
-do_train: True
+do_train: False
 do_inference_image: False
-do_inference_video: False
+do_inference_video: True
 
