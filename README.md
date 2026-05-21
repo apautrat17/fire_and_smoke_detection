@@ -59,9 +59,10 @@ The model achieves strong detection performance at IoU=0.5, with more strict loc
 
 #### Image Detection Samples
 <p align="center"> <img src="assets/model_inference_img1.png" width="32%" /> <img src="assets/model_inference_img2.png" width="32%" /> <img src="assets/model_inference_img3.png" width="32%" /> </p>
-Video Demonstration
 
-#### Firefighter POV example
+#### Video Demonstration
+
+Firefighter POV example:
 
 <p align="center">
   <img src="assets/firefighter_pov_2.gif" width="80%" />
