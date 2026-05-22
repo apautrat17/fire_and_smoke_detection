@@ -37,11 +37,6 @@ Dataset characteristics:
 - Mixed quality annotations depending on smoke density
 - Imbalanced distribution between fire and smoke instances
 
-<!-- Preprocessing:
-- YOLO format conversion
-- Image resizing and normalization
-- Data augmentation (flips, scaling, color jittering) -->
-
 ## Metrics
 
 #### Evaluation:
@@ -58,15 +53,25 @@ The model achieves strong detection performance at IoU=0.5, with more strict loc
 ## Example results
 
 #### Image Detection Samples
+
+Source: [DFireDataset](https://github.com/gaia-solutions-on-demand/DFireDataset)
+
 <p align="center"> <img src="assets/model_inference_img1.png" width="32%" /> <img src="assets/model_inference_img2.png" width="32%" /> <img src="assets/model_inference_img3.png" width="32%" /> </p>
 
 #### Video Demonstration
 
-Firefighter POV example:
+Firefighter POV example (source: https://www.youtube.com/watch?v=mphHFk5IXsQ&t=63s)
 
 <p align="center">
   <img src="assets/firefighter_pov_2.gif" width="80%" />
 </p>
+
+## Limits of the model
+
+- In scenarios with extremely dense smoke, the camera can become effectively “blind,” making fire detection unreliable or impossible. A possible improvement would be to train the system on infrared or thermal imagery and combine it with infrared cameras, which are less affected by smoke occlusion.
+- The current model detects the presence of fire and smoke but does not explicitly identify the physical source or origin point of the fire. In a robotic firefighting application, smoke patterns could help estimate the fire direction and fire detections could indicate where to spray water, but a more advanced model would be required to accurately localize and track each individual fire source.
+- Smoke detection remains inherently difficult because smoke is semi-transparent, diffuse, and visually ambiguous. The model may confuse smoke with visually similar phenomena such as fog, steam, clouds, dust, or strong lighting effects.
+- Bounding box annotations for smoke are often subjective due to unclear boundaries, which can limit localization accuracy and partly explains the lower mAP@50–95 score.
 
 ## Prerequisites
 
